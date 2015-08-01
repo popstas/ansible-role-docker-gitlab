@@ -1,0 +1,34 @@
+---
+service_name: docker-gitlab
+home_path: /root
+docker_compose_version: 1.3.3
+
+data_basepath: /srv/docker/gitlab
+data_postgresql_path: "{{ data_basepath }}/postgresql"
+data_gitlab_path: "{{ data_basepath }}/gitlab"
+data_redis_path: "{{ data_basepath }}/redis"
+
+postgresql_version: 9.4-2
+gitlab_version: 7.13.2
+redis_version: latest
+
+gitlab_host: localhost
+gitlab_port: 10080
+gitlab_ssh_port: 10022
+
+timezone: Asia/Yekaterinburg
+gitlab_timezone: Ekaterinburg # http://api.rubyonrails.org/classes/ActiveSupport/TimeZone.html
+
+smtp_enabled: false
+smtp_domain: example.com
+smtp_host: smtp.example.com
+smtp_port: 587
+smtp_user: "git@{{ smtp_domain }}"
+smtp_pass: pass
+smtp_starttls: true
+smtp_authentication: login
+gitlab_email: "admin@{{ smtp_domain }}"
+gitlab_email_reply_to: noreply@example.com
+
+gitlab_backups: daily
+gitlab_backup_time: 01:00

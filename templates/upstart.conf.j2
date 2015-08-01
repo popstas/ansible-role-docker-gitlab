@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+start on filesystem and started docker
+stop on runlevel [!2345]
+respawn
+chdir {{ data_basepath }}
+script
+  export HOME="{{ home_path }}"
+  exec docker-compose up
+end script

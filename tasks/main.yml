@@ -1,0 +1,26 @@
+---
+- name: Ensure pip present
+  apt: name=python-pip state=present
+  tags: docker-gitlab
+
+- name: Ensure docker-compose present
+  pip: name=docker-compose state=present
+  tags: docker-gitlab
+
+- name: Ensure data directories exists
+  file: path={{ item }} state=directory
+  with_items:
+    - "{{ data_basepath }}"
+    - "{{ data_postgresql_path }}"
+    - "{{ data_gitlab_path }}"
+    - "{{ data_redis_path }}"
+  tags: docker-gitlab
+
+- name: docker-compose.yml
+  template: src=docker-compose.yml.j2 dest={{ data_basepath }}/docker-compose.yml
+  notify: restart gitlab
+  tags: docker-gitlab
+
+- name: upstart script
+  template: src=upstart.conf.j2 dest="/etc/init/{{ service_name }}.conf"
+  tags: docker-gitlab

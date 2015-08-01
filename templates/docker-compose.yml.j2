@@ -1,0 +1,40 @@
+postgresql:
+  image: sameersbn/postgresql:{{ postgresql_version }}
+  environment:
+    - DB_USER=gitlab
+    - DB_PASS=password
+    - DB_NAME=gitlabhq_production
+  volumes:
+    - {{ data_postgresql_path }}:/var/lib/postgresql
+gitlab:
+  image: sameersbn/gitlab:{{ gitlab_version }}
+  links:
+    - redis:redisio
+    - postgresql:postgresql
+  ports:
+    - "{{ gitlab_port }}:80"
+    - "{{ gitlab_ssh_port }}:22"
+  environment:
+    - TZ={{ timezone }}
+    - SMTP_ENABLED={{ smtp_enabled }}
+    - SMTP_DOMAIN={{ smtp_domain }}
+    - SMTP_HOST={{ smtp_host }}
+    - SMTP_PORT={{ smtp_port }}
+    - SMTP_USER={{ smtp_user }}
+    - SMTP_PASS={{ smtp_pass }}
+    - SMTP_STARTTLS={{ smtp_starttls }}
+    - SMTP_AUTHENTICATION={{ smtp_authentication }}
+    - GITLAB_TIMEZONE={{ gitlab_timezone }}
+    - GITLAB_HOST={{ gitlab_host }}
+    - GITLAB_PORT={{ gitlab_port }}
+    - GITLAB_SSH_PORT={{ gitlab_ssh_port }}
+    - GITLAB_EMAIL={{ gitlab_email }}
+    - GITLAB_EMAIL_REPLY_TO={{ gitlab_email_reply_to }}
+    - GITLAB_BACKUPS={{ gitlab_backups }}
+    - GITLAB_BACKUP_TIME={{ gitlab_backup_time }}
+  volumes:
+    - {{ data_gitlab_path }}:/home/git/data
+redis:
+  image: sameersbn/redis:{{ redis_version }}
+  volumes:
+    - {{ data_redis_path }}:/var/lib/redis
