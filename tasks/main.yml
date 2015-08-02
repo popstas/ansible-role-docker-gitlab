@@ -1,4 +1,7 @@
 ---
+- name: test
+  command: whoami
+
 - name: Ensure pip present
   apt: name=python-pip state=present
   tags: docker-gitlab
@@ -17,7 +20,7 @@
   tags: docker-gitlab
 
 - name: docker-compose.yml
-  template: src=docker-compose.yml.j2 dest={{ data_basepath }}/docker-compose.yml
+  template: src=docker-compose.yml.j2 dest={{ docker_compose_file_path }}
   notify: restart gitlab
   tags: docker-gitlab
 

@@ -1,12 +1,12 @@
 ---
-service_name: docker-gitlab
-home_path: /root
-docker_compose_version: 1.3.3
+service_name: gitlab
 
 data_basepath: /srv/docker/gitlab
 data_postgresql_path: "{{ data_basepath }}/postgresql"
 data_gitlab_path: "{{ data_basepath }}/gitlab"
 data_redis_path: "{{ data_basepath }}/redis"
+docker_compose_file_path: "{{ data_basepath }}/docker-compose.yml"
+
 
 postgresql_version: 9.4-2
 gitlab_version: 7.13.2

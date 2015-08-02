@@ -10,10 +10,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.memory = 1024
   end
 
+  #config.vm.provision "shell",
+  #  inline: "apt-get -qq update && apt-get install -qq -y python-pip && pip install -q ansible"
+
   config.vm.provision :ansible do |ansible|
-       ansible.playbook = "test.yml"
-       ansible.sudo = true
-       ansible.verbose = "vvvv"
-       ansible.raw_ssh_args = "-o ControlMaster=no"
+    ansible.playbook = "test.yml"
+    #ansible.sudo = true
+    ansible.verbose = "vvvv"
   end
 end
