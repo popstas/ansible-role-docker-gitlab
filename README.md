@@ -1,6 +1,11 @@
 # ansible-role-docker-gitlab
-Ansible playbook for sameersbn/docker-gitlab
+Ansible playbook for install sameersbn/docker-gitlab on Ubuntu 16.04
 
-Need to install docker before.
+Only HTTPS now.  
+Gitlab registry will not working.
 
-[docker role](https://github.com/jdauphant/ansible-role-docker)
+# Requirements:
+- docker
+- docker-compose
+- systemd
+- viasite.nginx-vhosts

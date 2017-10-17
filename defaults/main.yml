@@ -1,34 +1,55 @@
 ---
-service_name: gitlab
+docker_gitlab_service_name: gitlab
 
-data_basepath: /srv/docker/gitlab
-data_postgresql_path: "{{ data_basepath }}/postgresql"
-data_gitlab_path: "{{ data_basepath }}/gitlab"
-data_redis_path: "{{ data_basepath }}/redis"
-docker_compose_file_path: "{{ data_basepath }}/docker-compose.yml"
+docker_gitlab_data_basepath: /srv/docker/gitlab
+docker_gitlab_data_gitlab_path: "{{ docker_gitlab_data_basepath }}/gitlab"
+docker_gitlab_data_postgresql_path: "{{ docker_gitlab_data_basepath }}/postgresql"
+docker_gitlab_data_redis_path: "{{ docker_gitlab_data_basepath }}/redis"
+docker_gitlab_compose_file_path: "{{ docker_gitlab_data_basepath }}/docker-compose.yml"
 
+docker_gitlab_redis_version: latest
 
-postgresql_version: 9.4-2
-gitlab_version: 7.13.2
-redis_version: latest
+docker_gitlab_postgresql_version: 9.6-2
+docker_gitlab_postgresql_db_user: gitlab
+docker_gitlab_postgresql_db_name: gitlabhq_production
+docker_gitlab_postgresql_db_pass: n0tSoSecretDbpass
 
-gitlab_host: localhost
-gitlab_port: 10080
-gitlab_ssh_port: 10022
+docker_gitlab_gitlab_version: 10.0.3
+docker_gitlab_gitlab_host: localhost
+docker_gitlab_gitlab_port: 10080
+docker_gitlab_gitlab_ssh_port: 10022
 
-timezone: Asia/Yekaterinburg
-gitlab_timezone: Ekaterinburg # http://api.rubyonrails.org/classes/ActiveSupport/TimeZone.html
+docker_gitlab_debug: "false"
+docker_gitlab_tz: Etc/GMT
+docker_gitlab_gitlab_timezone: UTC # http://api.rubyonrails.org/classes/ActiveSupport/TimeZone.html
+docker_gitlab_gitlab_https: "true"
+docker_gitlab_ssl_self_signed: "false"
+docker_gitlab_gitlab_host: git.example.com
+docker_gitlab_gitlab_secret_key_base: MyVerySecretKey!!!11
+docker_gitlab_gitlab_email: git@example.com
+docker_gitlab_gitlab_reply_to: admin@example.com
+docker_gitlab_gitlab_incoming_email_address: git@example.com
 
-smtp_enabled: false
-smtp_domain: example.com
-smtp_host: smtp.example.com
-smtp_port: 587
-smtp_user: "git@{{ smtp_domain }}"
-smtp_pass: pass
-smtp_starttls: true
-smtp_authentication: login
-gitlab_email: "admin@{{ smtp_domain }}"
-gitlab_email_reply_to: noreply@example.com
+docker_gitlab_ssl_certificate: "/etc/letsencrypt/live/{{ docker_gitlab_gitlab_host }}/fullchain.pem"
+docker_gitlab_ssl_certificate_key: "/etc/letsencrypt/live/{{ docker_gitlab_gitlab_host }}/privkey.pem"
 
-gitlab_backups: daily
-gitlab_backup_time: 01:00
+docker_gitlab_gitlab_backup_schrdule: daily
+docker_gitlab_gitlab_backup_time: 01:00
+
+docker_gitlab_registry_version: 2.4.1
+docker_gitlab_gitlab_registry_enabled: "false"
+docker_gitlab_gitlab_registry_host: hub.example.com
+docker_gitlab_gitlab_registry_port: 5000
+
+docker_gitlab_smtp_enabled: "false"
+docker_gitlab_smtp_domain: example.com
+docker_gitlab_smtp_host: smtp.gmail.com
+docker_gitlab_smtp_port: 587
+docker_gitlab_smtp_user: mailer@example.com
+docker_gitlab_smtp_pass: password
+docker_gitlab_smtp_starttls: "true"
+docker_gitlab_smtp_authentication: login
+
+docker_gitlab_oauth_enabled: "false"
+docker_gitlab_oauth_github_api_key:
+docker_gitlab_oauth_github_app_secret:

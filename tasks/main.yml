@@ -1,29 +1,71 @@
 ---
-- name: test
-  command: whoami
-
-- name: Ensure pip present
-  apt: name=python-pip state=present
-  tags: docker-gitlab
-
-- name: Ensure docker-compose present
-  pip: name=docker-compose state=present
-  tags: docker-gitlab
-
 - name: Ensure data directories exists
-  file: path={{ item }} state=directory
+  file: 
+    path: "{{ item }}"
+    state: directory
   with_items:
-    - "{{ data_basepath }}"
-    - "{{ data_postgresql_path }}"
-    - "{{ data_gitlab_path }}"
-    - "{{ data_redis_path }}"
+    - "{{ docker_gitlab_data_basepath }}"
+    - "{{ docker_gitlab_data_postgresql_path }}"
+    - "{{ docker_gitlab_data_gitlab_path }}"
+    - "{{ docker_gitlab_data_redis_path }}"
   tags: docker-gitlab
 
 - name: docker-compose.yml
-  template: src=docker-compose.yml.j2 dest={{ docker_compose_file_path }}
+  template: 
+    src: docker-compose.yml.j2 
+    dest: "{{ docker_gitlab_compose_file_path }}"
   notify: restart gitlab
   tags: docker-gitlab
 
-- name: upstart script
-  template: src=upstart.conf.j2 dest="/etc/init/{{ service_name }}.conf"
+- name: which docker-compose
+  command: which docker-compose
+  register: docker_gitlab_docker_compose_which
+  changed_when: false
+  tags: docker-gitlab
+
+- name: register docker_gitlab_docker_compose_path
+  set_fact:
+    docker_gitlab_docker_compose_path: "{{ docker_gitlab_docker_compose_which.stdout }}"
+  changed_when: false
+  tags: docker-gitlab
+
+- name: systemd unit
+  template:
+    src: gitlab.service.j2
+    dest: "/etc/systemd/system/{{ docker_gitlab_service_name }}.service"
+  notify:
+    - enable gitlab
+    - restart gitlab
+  tags: docker-gitlab
+
+- name: configure nginx server
+  include_role:
+    name: nginx-vhosts
+  vars:
+    # todo: http only
+    nginx_sites:
+      "{{ docker_gitlab_gitlab_host }}_http":
+        - listen 80
+        - server_name {{ docker_gitlab_gitlab_host }}
+        - return 301 https://$server_name$request_uri
+        - server_tokens off
+      "{{ docker_gitlab_gitlab_host }}":
+        - listen 443 ssl http2
+        - server_name {{ docker_gitlab_gitlab_host }}
+        - access_log off
+        - ssl_certificate {{ docker_gitlab_ssl_certificate }}
+        - ssl_certificate_key {{ docker_gitlab_ssl_certificate_key }}
+        - ssl_dhparam /etc/ssl/certs/dhparam.pem
+        - |
+          location / {
+            proxy_pass http://localhost:{{ docker_gitlab_gitlab_port }};
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+          }
+          location ~ /.well-known {
+            root /usr/share/nginx/html;
+            allow all;
+          }
   tags: docker-gitlab

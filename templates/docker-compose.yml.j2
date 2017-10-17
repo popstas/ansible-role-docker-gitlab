@@ -1,40 +1,182 @@
-postgresql:
-  image: sameersbn/postgresql:{{ postgresql_version }}
-  environment:
-    - DB_USER=gitlab
-    - DB_PASS=password
-    - DB_NAME=gitlabhq_production
-  volumes:
-    - {{ data_postgresql_path }}:/var/lib/postgresql
-gitlab:
-  image: sameersbn/gitlab:{{ gitlab_version }}
-  links:
-    - redis:redisio
-    - postgresql:postgresql
-  ports:
-    - "{{ gitlab_port }}:80"
-    - "{{ gitlab_ssh_port }}:22"
-  environment:
-    - TZ={{ timezone }}
-    - SMTP_ENABLED={{ smtp_enabled }}
-    - SMTP_DOMAIN={{ smtp_domain }}
-    - SMTP_HOST={{ smtp_host }}
-    - SMTP_PORT={{ smtp_port }}
-    - SMTP_USER={{ smtp_user }}
-    - SMTP_PASS={{ smtp_pass }}
-    - SMTP_STARTTLS={{ smtp_starttls }}
-    - SMTP_AUTHENTICATION={{ smtp_authentication }}
-    - GITLAB_TIMEZONE={{ gitlab_timezone }}
-    - GITLAB_HOST={{ gitlab_host }}
-    - GITLAB_PORT={{ gitlab_port }}
-    - GITLAB_SSH_PORT={{ gitlab_ssh_port }}
-    - GITLAB_EMAIL={{ gitlab_email }}
-    - GITLAB_EMAIL_REPLY_TO={{ gitlab_email_reply_to }}
-    - GITLAB_BACKUPS={{ gitlab_backups }}
-    - GITLAB_BACKUP_TIME={{ gitlab_backup_time }}
-  volumes:
-    - {{ data_gitlab_path }}:/home/git/data
-redis:
-  image: sameersbn/redis:{{ redis_version }}
-  volumes:
-    - {{ data_redis_path }}:/var/lib/redis
+version: '2'
+
+services:
+  redis:
+    restart: always
+    image: sameersbn/redis:{{ docker_gitlab_redis_version }}
+    command:
+    - --loglevel warning
+    volumes:
+    - {{ docker_gitlab_data_redis_path }}:/var/lib/redis:Z
+
+  postgresql:
+    restart: always
+    image: sameersbn/postgresql:{{ docker_gitlab_postgresql_version }}
+    volumes:
+    - {{ docker_gitlab_data_postgresql_path }}:/var/lib/postgresql:Z
+    environment:
+    - DB_USER={{ docker_gitlab_postgresql_db_user }}
+    - DB_PASS={{ docker_gitlab_postgresql_db_pass }}
+    - DB_NAME={{ docker_gitlab_postgresql_db_name }}
+    - DB_EXTENSION=pg_trgm
+
+  gitlab:
+    restart: always
+    image: sameersbn/gitlab:{{ docker_gitlab_gitlab_version }}
+    depends_on:
+    - redis
+    - postgresql
+    ports:
+    - "{{ docker_gitlab_gitlab_port }}:80"
+    - "{{ docker_gitlab_gitlab_ssh_port }}:22"
+    volumes:
+    - ./gitlab:/home/git/data:Z
+    - ./logs:/var/log/gitlab
+    - ./certs:/certs
+    environment:
+    - DEBUG={{ docker_gitlab_debug }}
+    - TZ={{ docker_gitlab_tz }}
+    - GITLAB_TIMEZONE={{ docker_gitlab_gitlab_timezone }}
+
+    - DB_ADAPTER=postgresql
+    - DB_HOST=postgresql
+    - DB_PORT=5432
+    - DB_USER={{ docker_gitlab_postgresql_db_user }}
+    - DB_PASS={{ docker_gitlab_postgresql_db_pass }}
+    - DB_NAME={{ docker_gitlab_postgresql_db_name }}
+
+    - REDIS_HOST=redis
+    - REDIS_PORT=6379
+
+    - GITLAB_HTTPS={{ docker_gitlab_gitlab_https }}
+    - SSL_SELF_SIGNED={{ docker_gitlab_ssl_self_signed }}
+
+    - GITLAB_HOST={{ docker_gitlab_gitlab_host }}
+    - GITLAB_PORT={% if docker_gitlab_gitlab_https %}443{% else %}80{% endif %}
+    - GITLAB_SSH_PORT={{ docker_gitlab_gitlab_ssh_port }}
+    - GITLAB_RELATIVE_URL_ROOT=
+    - GITLAB_SECRETS_DB_KEY_BASE={{ docker_gitlab_gitlab_secret_key_base }}
+    - GITLAB_SECRETS_SECRET_KEY_BASE={{ docker_gitlab_gitlab_secret_key_base }}
+    - GITLAB_SECRETS_OTP_KEY_BASE={{ docker_gitlab_gitlab_secret_key_base }}
+
+    - GITLAB_ROOT_PASSWORD=
+    - GITLAB_ROOT_EMAIL=
+
+    - GITLAB_NOTIFY_ON_BROKEN_BUILDS=true
+    - GITLAB_NOTIFY_PUSHER=false
+
+    - GITLAB_EMAIL={{ docker_gitlab_gitlab_email }}
+    - GITLAB_EMAIL_REPLY_TO={{ docker_gitlab_gitlab_reply_to }}
+    - GITLAB_INCOMING_EMAIL_ADDRESS={{ docker_gitlab_gitlab_incoming_email_address }}
+
+    - GITLAB_BACKUP_SCHEDULE={{ docker_gitlab_gitlab_backup_schrdule }}
+    - GITLAB_BACKUP_TIME={{ docker_gitlab_gitlab_backup_time }}
+
+    - GITLAB_REGISTRY_ENABLED={{ docker_gitlab_gitlab_registry_enabled }}
+    - GITLAB_REGISTRY_HOST={{ docker_gitlab_gitlab_registry_host }}
+    - GITLAB_REGISTRY_PORT={{ docker_gitlab_gitlab_registry_port }}
+    - GITLAB_REGISTRY_API_URL=http://registry:{{ docker_gitlab_gitlab_registry_port }}
+    - GITLAB_REGISTRY_CERT_PATH=/certs/registry-auth.crt
+    - GITLAB_REGISTRY_KEY_PATH=/certs/registry-auth.key
+    - GITLAB_REGISTRY_ISSUER=gitlab-issuer
+    #- SSL_REGISTRY_KEY_PATH=/certs/registry.key
+    #- SSL_REGISTRY_CERT_PATH=/certs/registry.crt
+
+    - SMTP_ENABLED={{ docker_gitlab_smtp_enabled }}
+    - SMTP_DOMAIN={{ docker_gitlab_smtp_domain }}
+    - SMTP_HOST={{ docker_gitlab_smtp_host }}
+    - SMTP_PORT={{ docker_gitlab_smtp_port }}
+    - SMTP_USER={{ docker_gitlab_smtp_user }}
+    - SMTP_PASS={{ docker_gitlab_smtp_pass }}
+    - SMTP_STARTTLS={{ docker_gitlab_smtp_starttls }}
+    - SMTP_AUTHENTICATION={{ docker_gitlab_smtp_authentication }}
+
+    - IMAP_ENABLED=false
+    - IMAP_HOST=imap.gmail.com
+    - IMAP_PORT=993
+    - IMAP_USER=mailer@example.com
+    - IMAP_PASS=password
+    - IMAP_SSL=true
+    - IMAP_STARTTLS=false
+
+    - OAUTH_ENABLED={{ docker_gitlab_oauth_enabled }}
+    - OAUTH_AUTO_SIGN_IN_WITH_PROVIDER=
+    - OAUTH_ALLOW_SSO=
+    - OAUTH_BLOCK_AUTO_CREATED_USERS=true
+    - OAUTH_AUTO_LINK_LDAP_USER=false
+    - OAUTH_AUTO_LINK_SAML_USER=false
+    - OAUTH_EXTERNAL_PROVIDERS=
+
+    - OAUTH_CAS3_LABEL=cas3
+    - OAUTH_CAS3_SERVER=
+    - OAUTH_CAS3_DISABLE_SSL_VERIFICATION=false
+    - OAUTH_CAS3_LOGIN_URL=/cas/login
+    - OAUTH_CAS3_VALIDATE_URL=/cas/p3/serviceValidate
+    - OAUTH_CAS3_LOGOUT_URL=/cas/logout
+
+    - OAUTH_GOOGLE_API_KEY=
+    - OAUTH_GOOGLE_APP_SECRET=
+    - OAUTH_GOOGLE_RESTRICT_DOMAIN=
+
+    - OAUTH_FACEBOOK_API_KEY=
+    - OAUTH_FACEBOOK_APP_SECRET=
+
+    - OAUTH_TWITTER_API_KEY=
+    - OAUTH_TWITTER_APP_SECRET=
+
+    - OAUTH_GITHUB_API_KEY={{ docker_gitlab_oauth_github_api_key }}
+    - OAUTH_GITHUB_APP_SECRET={{ docker_gitlab_oauth_github_app_secret }}
+    - OAUTH_GITHUB_URL=
+    - OAUTH_GITHUB_VERIFY_SSL=
+
+    - OAUTH_GITLAB_API_KEY=
+    - OAUTH_GITLAB_APP_SECRET=
+
+    - OAUTH_BITBUCKET_API_KEY=
+    - OAUTH_BITBUCKET_APP_SECRET=
+
+    - OAUTH_SAML_ASSERTION_CONSUMER_SERVICE_URL=
+    - OAUTH_SAML_IDP_CERT_FINGERPRINT=
+    - OAUTH_SAML_IDP_SSO_TARGET_URL=
+    - OAUTH_SAML_ISSUER=
+    - OAUTH_SAML_LABEL="Our SAML Provider"
+    - OAUTH_SAML_NAME_IDENTIFIER_FORMAT=urn:oasis:names:tc:SAML:2.0:nameid-format:transient
+    - OAUTH_SAML_GROUPS_ATTRIBUTE=
+    - OAUTH_SAML_EXTERNAL_GROUPS=
+    - OAUTH_SAML_ATTRIBUTE_STATEMENTS_EMAIL=
+    - OAUTH_SAML_ATTRIBUTE_STATEMENTS_NAME=
+    - OAUTH_SAML_ATTRIBUTE_STATEMENTS_FIRST_NAME=
+    - OAUTH_SAML_ATTRIBUTE_STATEMENTS_LAST_NAME=
+
+    - OAUTH_CROWD_SERVER_URL=
+    - OAUTH_CROWD_APP_NAME=
+    - OAUTH_CROWD_APP_PASSWORD=
+
+    - OAUTH_AUTH0_CLIENT_ID=
+    - OAUTH_AUTH0_CLIENT_SECRET=
+    - OAUTH_AUTH0_DOMAIN=
+
+    - OAUTH_AZURE_API_KEY=
+    - OAUTH_AZURE_API_SECRET=
+    - OAUTH_AZURE_TENANT_ID=
+
+# todo: certs
+{% if docker_gitlab_debug == "true" %}
+  registry:
+    restart: always
+    image: registry:{{ docker_gitlab_registry_version }}
+    ports:
+    - "{{ docker_gitlab_gitlab_registry_port }}:5000"
+    volumes:
+    - ./gitlab/shared/registry:/registry
+    - ./certs:/certs
+    environment:
+    - REGISTRY_LOG_LEVEL=info
+    - REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/registry
+    - REGISTRY_AUTH_TOKEN_REALM=https://{{ docker_gitlab_gitlab_host }}/jwt/auth
+    #- REGISTRY_AUTH_TOKEN_REALM=http://localhost:10080/jwt/auth
+    - REGISTRY_AUTH_TOKEN_SERVICE=container_registry
+    - REGISTRY_AUTH_TOKEN_ISSUER=gitlab-issuer
+    - REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE=/certs/registry-auth.crt
+    - REGISTRY_STORAGE_DELETE_ENABLED=true
+{% endif %}

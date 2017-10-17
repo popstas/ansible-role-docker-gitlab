@@ -1,0 +1,22 @@
+[Unit]
+Description=Gitlab service with docker compose
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+
+WorkingDirectory={{ docker_gitlab_data_basepath }}
+
+# Remove old containers, images and volumes
+ExecStartPre={{ docker_gitlab_docker_compose_path }} -f "{{ docker_gitlab_compose_file_path }}" down -v
+ExecStartPre={{ docker_gitlab_docker_compose_path }} -f "{{ docker_gitlab_compose_file_path }}" rm -fv
+
+# Compose up
+ExecStart={{ docker_gitlab_docker_compose_path }} -f "{{ docker_gitlab_compose_file_path }}" up
+
+# Compose down, remove containers and volumes
+ExecStop={{ docker_gitlab_docker_compose_path }} -f "{{ docker_gitlab_compose_file_path }}" down -v
+
+[Install]
+WantedBy=multi-user.target
